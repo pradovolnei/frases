@@ -2,21 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
-import { BannerAdSize, AppOpenAd, InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-mobile-ads';
+import { BannerAdSize, AppOpenAd, RewardedAdEventType, InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-mobile-ads';
 
 
 const API_BASE_URL = 'http://192.168.254.66/projetos/frases/api/';
 
 const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-4973308715139947/5584042430';
 
+const rewarded = RewardedAd.createForAdRequest(adUnitId, {
+  requestNonPersonalizedAdsOnly: true,
+  keywords: ['fashion', 'clothing'],
+});
+
 const App = () => {
   const [categorias, setCategorias] = useState([]);
   const [selectedCategoria, setSelectedCategoria] = useState('');
   const [fraseTexto, setFraseTexto] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [idFrase, setIdFrase] = useState(0);
 
   useEffect(() => {
     // Carregar as categorias ao abrir a tela
     fetchCategorias();
+    fetchFraseTexto(selectedCategoria);
   }, []);
 
   const fetchCategorias = async () => {
@@ -31,9 +39,14 @@ const App = () => {
   const fetchFraseTexto = async (categoriaId) => {
     try {
       let url = `${API_BASE_URL}/frases.php`;
-      if (categoriaId) {
+      if (categoriaId && idFrase == 0) {
         url += `?cat=${categoriaId}`;
       }
+
+      if(idFrase !== 0){
+        url += `?id=${idFrase}`;
+      }
+      
       const response = await axios.get(url);
       if (response.data.length === 0) {
         Alert.alert('Nenhuma frase encontrada para esta categoria.');
