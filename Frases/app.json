@@ -1,4 +1,8 @@
 {
   "name": "Frases",
-  "displayName": "Frases"
+  "displayName": "Frases",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-4973308715139947~3586496688",
+    "ios_app_id": "ca-app-pub-4973308715139947~3586496688"
+  }
 }
