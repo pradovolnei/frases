@@ -3,29 +3,26 @@ import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import { BannerAdSize, AppOpenAd, RewardedAdEventType, InterstitialAd, RewardedAd, BannerAd, TestIds } from 'react-native-google-mobile-ads';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const API_BASE_URL = 'http://192.168.254.66/projetos/frases/api/';
 
 const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-4973308715139947/5584042430';
+const adUnitIdReward = __DEV__ ? TestIds.REWARDED  : 'ca-app-pub-4973308715139947/6465432151';
 
-const rewarded = RewardedAd.createForAdRequest(adUnitId, {
+const rewarded = RewardedAd.createForAdRequest(adUnitIdReward, {
   requestNonPersonalizedAdsOnly: true,
   keywords: ['fashion', 'clothing'],
 });
 
 const App = () => {
   const [categorias, setCategorias] = useState([]);
-  const [selectedCategoria, setSelectedCategoria] = useState('');
+  const [selectedCategoria, setSelectedCategoria] = useState('0');
   const [fraseTexto, setFraseTexto] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [idFrase, setIdFrase] = useState(0);
-
-  useEffect(() => {
-    // Carregar as categorias ao abrir a tela
-    fetchCategorias();
-    fetchFraseTexto(selectedCategoria);
-  }, []);
+  const [dataAtual, setDataAtual] = useState('');
 
   const fetchCategorias = async () => {
     try {
@@ -36,35 +33,96 @@ const App = () => {
     }
   };
 
+  const handlePickerChange = (itemValue) => {
+    setSelectedCategoria(itemValue);
+  };
+
+  const esperarLoad = () => {
+    rewarded.load();
+    // Chama a função após 5 segundos (5000 milissegundos)
+    setTimeout(handleLoadFrasePress, 5000);
+  };
+
+  const handleLoadFrasePress = () => {
+    
+    if (selectedCategoria === "0") {
+      var aleatorio = Math.floor(Math.random() * 20) + 1;
+      setSelectedCategoria(aleatorio, () => {
+        fetchFraseTexto(aleatorio);
+      });
+    } else {
+      fetchFraseTexto(selectedCategoria);
+    }
+    
+  };
+
   const fetchFraseTexto = async (categoriaId) => {
     try {
-      let url = `${API_BASE_URL}/frases.php`;
-      if (categoriaId && idFrase == 0) {
-        url += `?cat=${categoriaId}`;
+      const jsonFraseSalva = await AsyncStorage.getItem('idFraseSalva');
+      const fraseSalva = JSON.parse(jsonFraseSalva);
+      if (fraseSalva) {
+        setIdFrase(fraseSalva);
       }
 
-      if(idFrase !== 0){
-        url += `?id=${idFrase}`;
-      }
-      
+      let url = `${API_BASE_URL}/frases.php?id=${idFrase}&cat=${categoriaId}`;
+
       const response = await axios.get(url);
+      
       if (response.data.length === 0) {
-        Alert.alert('Nenhuma frase encontrada para esta categoria.');
+       Alert.alert('Nenhuma frase encontrada para esta categoria.');
       } else {
         setFraseTexto(response.data[0].texto);
+        setIdFrase(response.data[0].id);
+        saveFraseToAsyncStorage(response.data[0].id);
       }
     } catch (error) {
       console.error('Erro ao carregar frase:', error);
     }
   };
 
-  const handlePickerChange = (itemValue) => {
-    setSelectedCategoria(itemValue);
+  const saveFraseToAsyncStorage = async (fraseId) => {
+    try {
+      const data = {
+        id: fraseId,
+        date: new Date().toISOString(), // Salva a data atual em formato ISO8601
+      };
+      //await AsyncStorage.setItem('fraseSalva', JSON.stringify(data));
+      await AsyncStorage.setItem('idFraseSalva', fraseId);
+      console.log('Frase salva com sucesso no AsyncStorage:', data);
+    } catch (error) {
+      console.error('Erro ao salvar frase no AsyncStorage:', error);
+    }
   };
 
-  const handleLoadFrasePress = () => {
+  useEffect(() => {
+    // Carregar as categorias ao abrir a tela
+    fetchCategorias();
     fetchFraseTexto(selectedCategoria);
-  };
+
+    const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      setLoaded(true);
+      rewarded.show();
+    });
+    const unsubscribeEarned = rewarded.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      reward => {
+        console.log('User earned reward of ', reward);
+      },
+    );
+
+    // Unsubscribe from events on unmount
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeEarned();
+    };
+  }, []);
+
+  // No advert ready to show yet
+  if (!loaded) {
+    return null;
+  }  
+
+  
 
   return (
     <View style={{ flex: 1 }}>
@@ -76,7 +134,7 @@ const App = () => {
           selectedValue={selectedCategoria}
           onValueChange={handlePickerChange}
           style={{ width: 200 }}>
-          <Picker.Item label="Escolha uma categoria" value="" />
+          <Picker.Item label="Escolha uma categoria" value="0" />
           {categorias.map((categoria) => (
             <Picker.Item
               key={categoria.id}
@@ -95,7 +153,7 @@ const App = () => {
             flexDirection: 'row', // Para alinhar o ícone ao lado do texto
             alignItems: 'center', // Para centralizar o conteúdo verticalmente
           }}
-          onPress={handleLoadFrasePress}>
+          onPress={esperarLoad}>
           <Image
             source={require('./img/movie.png')}
             style={{
@@ -106,6 +164,9 @@ const App = () => {
           />
           <Text style={{ color: '#fff' }}>Carregar Frase</Text>
         </TouchableOpacity>
+        <Text style={{ marginTop: 20, fontSize: 16 }}>
+            {selectedCategoria} - {idFrase} - {dataAtual}
+          </Text>
         {fraseTexto ? (
           <Text style={{ marginTop: 20, fontSize: 16 }}>
             Frase: {fraseTexto}

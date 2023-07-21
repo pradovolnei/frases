@@ -15,13 +15,14 @@ if ($mysqli->connect_errno) {
 }
 
 // Consulta SQL para recuperar os dados da tabela categorias
-$query = "SELECT * FROM frases ";
+$query = "SELECT * FROM frases WHERE id IS NOT NULL";
 
-if(isset($_GET["cat"]) && $_GET["cat"])
-    $query .= " WHERE categoria_id=".$_GET["cat"];
-
-if(isset($_GET["id"]) && $_GET["id"])
-    $query .= " WHERE id=".$_GET["id"];
+if(isset($_GET["cat"]) && $_GET["cat"] != "0")
+    $query .= " AND categoria_id=".$_GET["cat"];
+else{
+    if(isset($_GET["id"]) && $_GET["id"] != "0")
+        $query .= " AND id=".$_GET["id"];
+}
 
 $query.= " ORDER BY RAND() LIMIT 1";
 $result = $mysqli->query($query);
