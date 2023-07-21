@@ -117,11 +117,6 @@ const App = () => {
     };
   }, []);
 
-  // No advert ready to show yet
-  if (!loaded) {
-    return null;
-  }  
-
   
 
   return (
@@ -164,9 +159,6 @@ const App = () => {
           />
           <Text style={{ color: '#fff' }}>Carregar Frase</Text>
         </TouchableOpacity>
-        <Text style={{ marginTop: 20, fontSize: 16 }}>
-            {selectedCategoria} - {idFrase} - {dataAtual}
-          </Text>
         {fraseTexto ? (
           <Text style={{ marginTop: 20, fontSize: 16 }}>
             Frase: {fraseTexto}
