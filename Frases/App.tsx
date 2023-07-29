@@ -6,7 +6,7 @@ import { BannerAdSize, AppOpenAd, RewardedAdEventType, InterstitialAd, RewardedA
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const API_BASE_URL = 'http://192.168.254.66/projetos/frases/api/';
+const API_BASE_URL = 'https://volneiapi.entrar.site/';
 
 const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-4973308715139947/5584042430';
 const adUnitIdReward = __DEV__ ? TestIds.REWARDED  : 'ca-app-pub-4973308715139947/6465432151';
@@ -121,15 +121,15 @@ const App = () => {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ fontSize: 24, fontFamily: 'monospace', marginBottom: 50 }}>
-          Frases
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -50, backgroundColor: '#AAF' }}>
+        <Text style={{ fontSize: 24, fontFamily: 'Verdana', marginBottom: 50, fontWeight: 'bold' }}>
+          FRASES
         </Text>
         <Picker
           selectedValue={selectedCategoria}
           onValueChange={handlePickerChange}
           style={{ width: 200 }}>
-          <Picker.Item label="Escolha uma categoria" value="0" />
+          <Picker.Item label="Tipo de frase" value="0" />
           {categorias.map((categoria) => (
             <Picker.Item
               key={categoria.id}
@@ -157,19 +157,25 @@ const App = () => {
               marginRight: 8, // Espaçamento entre o ícone e o texto
             }}
           />
-          <Text style={{ color: '#fff' }}>Carregar Frase</Text>
+          <Text style={{ color: '#fff' }}>Nova Frase</Text>
         </TouchableOpacity>
-        {fraseTexto ? (
-          <Text style={{ marginTop: 20, fontSize: 16 }}>
-            Frase: {fraseTexto}
+        <View style={{ marginTop: 20, alignItems: 'center' }}>
+          <Text style={{ fontSize: 16, fontFamily: 'Verdana', fontWeight: 'bold' }}>
+            Frase do dia:
           </Text>
-        ) : null}
+          {fraseTexto ? (
+            <Text style={{ fontSize: 16, fontFamily: 'Verdana', margin: 10 }}>
+              {fraseTexto}
+            </Text>
+          ) : null}
+        </View>
       </View>
       <BannerAd 
         unitId={adUnitId} 
         size={BannerAdSize.FULL_BANNER}
       />
     </View>
+
   );
 };
 
